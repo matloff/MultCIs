@@ -1,0 +1,5 @@
+project:
+  title: 'MultCIs'
+  type: website
+  output-dir: docs
+

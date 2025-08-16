@@ -1,0 +1,168 @@
+
+
+---
+title: "Forming Multiple Confidence Intervals in Monte Carlo Data"
+author: Norm Matloff
+toc: true
+---
+
+[Author bio](https://heather.cs.ucdavis.edu/matloff.html)
+
+[]{.column-margin}
+In developing/choosing a model, we may perform cross-validation, with
+many replicates, in order to compare multiple algorithms, multiple sets
+of hyperparameters and so on. To make our analysis statistically valid,
+we can form confidence intervals (CIs). 
+
+[Some analysts in some applications may not consider this to be a
+"problem." This is a philosophical issue, not pursued here.]{.column-margin}
+However, if we form many CIs, say at 95% level each, their overall
+coverage probability may be much lower than 95%. This is the *multiple
+inference* (MI) or *simultaneous inference* problem. In this
+document, we discuss remedies in the model-selection context. 
+
+[See Jason Hsu, *Multiple Comparisons: Theory and methods*.]{.column-margin}
+The MI problem has been extremely well studied, resulting in myriad
+methods.  Here we employ two of the most well-known methods, the
+Bonferroni Inequality and Scheffe's Method.
+
+Note that our focus is on CIs, not hypothesis tests. We strongly
+[recommend against](https://matloff.github.io/No-P-Values/NPV.htm)
+the latter approach.
+
+# Motivating Example
+
+``` r
+library(qeML)
+data(svcensus)
+head(svcensus)
+```
+
+This is US census data. Let's predict gender.
+
+``` r
+logitAcc <- qeLogit(svcensus,'gender')$testAcc
+rfAcc <- qeRFranger(svcensus,'gender')$testAcc
+xgbAcc <- qeXGBoost(svcensus,'gender')$testAcc
+c(logitAcc,rfAcc,xgbAcc)
+```
+
+Several points to note:
+
+* The **qeML** functions automatically do cross-validation, via
+  an argument **holdout**; here we take the default value. 
+
+* The functions return S3 objects, one of whose components is prediction
+  accuracy on the test data, **testAcc**, in this case the probability
+  of misclassification..
+
+* Since the random number seed is not reset, each of the three
+  algorithms is using different training sets and different test sets
+  from each other. This makes them statistically independent. The
+  alternative (not necessarily better or worse) would be to insert, say,
+
+  ``` r
+  set.seed(9999)
+  ```
+
+  before each of the three calls.
+
+* Since the holdout set is random, we should be performing each of the
+  three calls many times, and compute three averages, say
+
+  ``` r
+  logitAccs <- 
+     replicate(50,qeLogit(svcensus,'gender')$testAcc)
+  rfAccs <- 
+     replicate(50,qeRFranger(svcensus,'gender')$testAcc)
+  xgbAccs <- 
+     replicate(50,qeXGBoost(svcensus,'gender')$testAcc)
+  accs <- cbind(logitAccs,rfAccs,xgbAccs)
+  colMeans(accs)
+  ```
+
+# Review: Confidence Intervals, Standard Errors
+
+To set the stage, let's review the statistical concepts of
+*confidence interval* and *standard error*. Say we have
+an estimator $\widehat{\theta}$ of some population parameter $\theta$,
+e.g.\ $\bar{X}$ for a population mean $\mu$.
+
+Loosely speaking, the term *standard error* of is our estimate of
+$\sqrt{Var(\widehat{\theta})}$.  More precisely, suppose that
+$\widehat{\theta}$ is asymptotically normal.  The standard error is an
+estimate of the standard deviation of that normal distribution. For this
+reason, it is customary to write $AVar(\widehat{\theta})$ rather than
+$Var(\widehat{\theta})$. 
+
+A, say 95%, confidence interval (CI) for $\mu$ is then
+$$
+\widehat{\theta} \pm 1.96 ~ \textrm{SE}(\widehat{\theta})
+$$
+
+where we denote the standard error of $\widehat{\theta}$ by
+$\textrm{SE}(\widehat{\theta})$.
+
+The 95% figure means that of all possible samples of the given size from
+the population, 95% of the resulting confidence intervals will contain
+$\theta$. In many cases, the 95% figure is only approximate, stemming
+from a derivation that uses the Central Limit Theorem.
+
+In general, for confidence level $1-\alpha$, replace 1.96 by
+$z_{\alpha}$, the $1-\alpha/2$ quantile of the N(0,1) distribution, Then
+our CI is
+
+$$
+\widehat{\theta} \pm z_{\alpha} \textrm{SE}(\widehat{\theta})
+$${#eq-pmse}
+
+Examples of finding $z_{\alpha}$:
+
+``` r
+> qnorm(0.975)
+[1] 1.959964  # for 95% CI
+> qnorm(0.995)  # for 99% CI
+[1] 2.575829
+```
+
+::: {.callout-important}
+## Note Regarding Sensitivity of Phrasing
+
+There is a bit of drama in this word *contain* in the phrase "will
+contain $\theta$." Instead of saying the intervals *contain* $\theta$,
+why not simply say $\theta$ is *in* the intervals? Aren't these two
+descriptions equivalent in terms of English?  Of course they are.
+
+But many instructors of statistics classes worry that students will take
+the description based on "in" to mean that $\theta$ is the random
+quantity, when in fact the CI is random (random center, random radius)
+and $\theta$ is fixed (though unknown). The instructors thus insist on
+the more awkward phrasing "contain," so as to avoid students
+misunderstanding. Indeed some instructors would contend that use of the
+word *in* is itself just plain incorrect.
+
+My own view is that in some cases the word *in* is clearer (and
+certainly correct in any case), and that it is better to add a warning
+about what is random/nonrandom than engage in awkward phrasing.
+
+:::
+
+### Example: Logistic Regression Coefficients
+
+```{r}
+suppressPackageStartupMessages(library(qeML))
+data(svcensus)
+logitOut <- qeLogit(svcensus,'gender',yesYVal='female') 
+summary(logitOut$glmOuts[[1]]) 
+```
+
+So a 95% CI for the coefficient for occupation 141 is
+
+$$
+-1.46 \pm 1.96 \times 0.07
+$$
+
+# The Bonferroni Inequality
+
+This one is the simplest and most convenient.
+
