@@ -44,7 +44,10 @@ This is US census data. Let's predict gender.
 logitAcc <- qeLogit(svcensus,'gender')$testAcc
 rfAcc <- qeRFranger(svcensus,'gender')$testAcc
 xgbAcc <- qeXGBoost(svcensus,'gender')$testAcc
-c(logitAcc,rfAcc,xgbAcc)
+knn25Acc <- qeKNN(svcensus,'gender',k=25)$testAcc
+knn200Acc <- qeKNN(svcensus,'gender',k=200)$testAcc
+c(logitAcc,rfAcc,xgbAcc,knn25Acc,knn200Acc)
+# 0.263 0.254 0.263 0.256 0.236
 ```
 
 Several points to note:
@@ -79,9 +82,16 @@ Several points to note:
      replicate(50,qeRFranger(svcensus,'gender')$testAcc)
   xgbAccs <- 
      replicate(50,qeXGBoost(svcensus,'gender')$testAcc)
-  accs <- cbind(logitAccs,rfAccs,xgbAccs)
-  colMeans(accs)
+  knn25Accs <- replicate(50,qeKNN(svcensus,'gender',k=25)$testAcc)
+  knn200Accs <- replicate(50,qeKNN(svcensus,'gender',k=200)$testAcc)
+  accs <- cbind(logitAccs,rfAccs,xgbAccs,knn25Accs,knn200Accs)
+  # 0.24476    0.26124    0.25828    0.25194    0.24844
   ```
+
+We might wish to find a CI for each of the 5 quantities, or for each
+difference, i.e. c(5,2) = 10 CIs. With more algorithms, and especially
+with more hyperparameter combinations, our CI count could easily be
+several dozen or more.
 
 # Review: Confidence Intervals, Standard Errors
 
@@ -97,7 +107,16 @@ estimate of the standard deviation of that normal distribution. For this
 reason, it is customary to write $AVar(\widehat{\theta})$ rather than
 $Var(\widehat{\theta})$. 
 
-A, say 95%, confidence interval (CI) for $\mu$ is then
+In the familiar case in which $\theta$ is a population mean and
+$\widehat{\theta}$ is the sample mean, 
+
+$$
+AVar(\widehat{\theta} = \frac{s}{\sqrt{n}}
+$$
+
+where $s$ is the sample standard deviation.
+
+A, say 95%, confidence interval (CI) for $\theta$ is then
 $$
 \widehat{\theta} \pm 1.96 ~ \textrm{SE}(\widehat{\theta})
 $$
@@ -161,11 +180,11 @@ summary(logitOut$glmOuts[[1]])
 So a 95% CI for the coefficient for occupation 141 is
 
 $$
--1.46 \pm 1.96 \times 0.07
+-1.44 \pm 1.96 \times 0.07
 $$
 
 # The Bonferroni Inequality
 
-This one is the simplest and most convenient.
+This one is the simplest and most convenient MI method.
 
 
