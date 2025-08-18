@@ -1,24 +1,24 @@
 
 
 ---
-title: "Forming Multiple Confidence Intervals in Monte Carlo Data"
+title: "Forming Multiple Confidence Intervals for Model Selection"
 author: Norm Matloff
 toc: true
 ---
 
 [Author bio](https://heather.cs.ucdavis.edu/matloff.html)
 
-[]{.column-margin}
-In developing/choosing a model, we may perform cross-validation, with
-many replicates, in order to compare multiple algorithms, multiple sets
-of hyperparameters and so on. To make our analysis statistically valid,
-we can form confidence intervals (CIs). 
+[]{.column-margin} In developing/choosing a model, we may perform
+simulation or cross-validation, with many replicates, in order to
+compare multiple algorithms, multiple sets of hyperparameters and so on.
+To make our analysis statistically valid, we can form confidence
+intervals (CIs). 
 
 [Some analysts in some applications may not consider this to be a
 "problem." This is a philosophical issue, not pursued here.]{.column-margin}
 However, if we form many CIs, say at 95% level each, their overall
-coverage probability may be much lower than 95%. This is the *multiple
-inference* (MI) or *simultaneous inference* problem. In this
+coverage probability will be much lower than 95%. This is the *multiple
+inference* (MI) or *multiple comparisons* problem. In this
 document, we discuss remedies in the model-selection context. 
 
 [See Jason Hsu, *Multiple Comparisons: Theory and methods*.]{.column-margin}
@@ -50,7 +50,8 @@ c(logitAcc,rfAcc,xgbAcc)
 Several points to note:
 
 * The **qeML** functions automatically do cross-validation, via
-  an argument **holdout**; here we take the default value. 
+  an argument **holdout**, indicating our desired size of test set.
+  Here we take the default value. 
 
 * The functions return S3 objects, one of whose components is prediction
   accuracy on the test data, **testAcc**, in this case the probability
@@ -60,6 +61,7 @@ Several points to note:
   algorithms is using different training sets and different test sets
   from each other. This makes them statistically independent. The
   alternative (not necessarily better or worse) would be to insert, say,
+  50 times:
 
   ``` r
   set.seed(9999)
@@ -165,4 +167,5 @@ $$
 # The Bonferroni Inequality
 
 This one is the simplest and most convenient.
+
 
