@@ -185,6 +185,20 @@ $$
 
 # The Bonferroni Inequality
 
-This one is the simplest and most convenient MI method.
+This one is the simplest and most convenient MI method. The derivation
+is instructive.
+
+Suppose $A$ and $B$ are events defined on some probability space. Then
+
+$$
+P(A \textrm{ or } B) \leq P(A) + P(B)
+$${#eq-probAorB}
+
+Say we form 95% CIs for two different quantities, so that each has a
+probability 5% of failing to contain its corresponding population
+parameter. Setting $A$ to be the event that the first CI failures in
+that regard, and defining $B$ similarly for the second CI,
+
+
 
 
