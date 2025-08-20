@@ -12,19 +12,19 @@ toc: true
 simulation or cross-validation, with many replicates, in order to
 compare multiple algorithms, multiple sets of hyperparameters and so on.
 To make our analysis statistically valid, we can form confidence
-intervals (CIs). 
+intervals (CIs).  
 
-[Some analysts in some applications may not consider this to be a
-"problem." This is a philosophical issue, not pursued here.]{.column-margin}
 However, if we form many CIs, say at 95% level each, their overall
-coverage probability will be much lower than 95%. This is the *multiple
-inference* (MI) or *multiple comparisons* problem. In this
-document, we discuss remedies in the model-selection context. 
+coverage probability will be much lower than 95%.  This is the *multiple
+inference* (MI) or *multiple comparisons* problem, sometimes also called
+*simultaneous inference*. In this document, we discuss remedies in the
+model-selection context. 
 
-[See Jason Hsu, *Multiple Comparisons: Theory and methods*.]{.column-margin}
-The MI problem has been extremely well studied, resulting in myriad
-methods.  Here we employ two of the most well-known methods, the
-Bonferroni Inequality and Scheffe's Method.
+[For a good general presentation of MI methods, see Jason Hsu, *Multiple
+Comparisons: Theory and methods*.]{.column-margin} The MI problem has
+been extremely well studied, resulting in myriad methods.  Here we
+employ two of the most well-known methods, the Bonferroni Inequality and
+Scheffe's Method.
 
 Note that our focus is on CIs, not hypothesis tests. We strongly
 [recommend against](https://matloff.github.io/No-P-Values/NPV.htm)
@@ -60,20 +60,19 @@ Several points to note:
   accuracy on the test data, **testAcc**, in this case the probability
   of misclassification..
 
-* Since the random number seed is not reset, each of the three
-  algorithms is using different training sets and different test sets
+* Since the random number seed is not reset, each of the calls
+  is using different training sets and different test sets
   from each other. This makes them statistically independent. The
-  alternative (not necessarily better or worse) would be to insert, say,
-  50 times:
+  alternative (not necessarily better or worse) would be to insert, say
 
   ``` r
   set.seed(9999)
   ```
 
-  before each of the three calls.
+  before each of the calls.
 
 * Since the holdout set is random, we should be performing each of the
-  three calls many times, and compute three averages, say
+  calls many times, and compute averages, say
 
   ``` r
   logitAccs <- 
@@ -85,13 +84,20 @@ Several points to note:
   knn25Accs <- replicate(50,qeKNN(svcensus,'gender',k=25)$testAcc)
   knn200Accs <- replicate(50,qeKNN(svcensus,'gender',k=200)$testAcc)
   accs <- cbind(logitAccs,rfAccs,xgbAccs,knn25Accs,knn200Accs)
+  colMeans(accs)
   # 0.24476    0.26124    0.25828    0.25194    0.24844
   ```
 
+[Some analysts in some applications may not consider
+MI to be a "problem." This is a philosophical issue, not pursued here,
+but we note that the choice may depend on the application. A medical
+research journal may require MI, say, whereas an amateur stock market
+investor may not feel it's necessary for that type of data
+analysis.]{.column-margin}
 We might wish to find a CI for each of the 5 quantities, or for each
 difference, i.e. c(5,2) = 10 CIs. With more algorithms, and especially
 with more hyperparameter combinations, our CI count could easily be
-several dozen or more.
+several dozen or more, raising MI concerns.
 
 # Review: Confidence Intervals, Standard Errors
 
@@ -101,17 +107,17 @@ an estimator $\widehat{\theta}$ of some population parameter $\theta$,
 e.g.\ $\bar{X}$ for a population mean $\mu$.
 
 Loosely speaking, the term *standard error* of is our estimate of
-$\sqrt{Var(\widehat{\theta})}$.  More precisely, suppose that
+$\sqrt{\hat{Var}(\widehat{\theta})}$.  More precisely, suppose that
 $\widehat{\theta}$ is asymptotically normal.  The standard error is an
 estimate of the standard deviation of that normal distribution. For this
-reason, it is customary to write $AVar(\widehat{\theta})$ rather than
+reason, one sometimes writes $AVar(\widehat{\theta})$ rather than
 $Var(\widehat{\theta})$. 
 
 In the familiar case in which $\theta$ is a population mean and
 $\widehat{\theta}$ is the sample mean, 
 
 $$
-AVar(\widehat{\theta} = \frac{s}{\sqrt{n}}
+AVar(\widehat{\theta}) = \frac{s}{\sqrt{n}}
 $$
 
 where $s$ is the sample standard deviation.
@@ -142,6 +148,8 @@ Examples of finding $z_{\alpha}$:
 ``` r
 > qnorm(0.975)
 [1] 1.959964  # for 95% CI
+> qnorm(0.025)  # N(0,1) is symmetric around 0
+[1] -1.959964
 > qnorm(0.995)  # for 99% CI
 [1] 2.575829
 ```
@@ -181,7 +189,7 @@ So a 95% CI for the coefficient for occupation 141 is
 
 $$
 -1.44 \pm 1.96 \times 0.07
-$$
+$${#eq-196}
 
 # The Bonferroni Inequality
 
@@ -195,10 +203,55 @@ P(A \textrm{ or } B) \leq P(A) + P(B)
 $${#eq-probAorB}
 
 Say we form 95% CIs for two different quantities, so that each has a
-probability 5% of failing to contain its corresponding population
-parameter. Setting $A$ to be the event that the first CI failures in
-that regard, and defining $B$ similarly for the second CI,
+probability 5% of being "wrong," i.e.  of failing to contain its
+corresponding population parameter. Set $A$ to be the event that the
+first CI fails in that regard, and define $B$ similarly for the
+second CI. Then @eq-probAorB tells us that the probability of at least
+one of the CIs being wrong is at most 10%. In other words, *our overall
+confidence level is at least 90%.*
 
+Moreover: Presumably the reason we set the original CI levels to 95% was
+that we are comfortable with an error rate of 5%. Accordingly, we may
+wish to have an *overall* rate of 5% -- again, meaning that we are 95%
+confident that *both* CIs are correct -- rather than the 10% shown
+above. The same reasoning as above shows that we can achieve overall 95%
+confidence by making each of the two individual CIs at the 97.5% level.
+
+So we could form intervals for say both **occ140** and **occ141** above.
+
+Of course, this MI benefit comes at a price:
+
+``` r
+qnorm((1-0.975)/2)
+# -2.241403
+```
+
+So, the 1.96 in @eq-pmse now becomes 2.24, forcing us to form wider
+intervals.
+
+If in @eq-probAorB one replaces $B$ by $B_1 or B_2$, that extends the
+relation from two events to three, and so on.
+
+# Scheffe's Method
+
+The Bonferroni Method is fine for forming a few CIs, but is impractical
+if one needs many. The coefficient for forming a CI -- 1.96 and 2.24
+above -- becomes too large. By contrast, the Scheffe' Method actually
+gives us the freedom to form infinitely many CIs.
+
+## The Chi-Square Family of Probability Distributions
+
+Some readers may have seen this distribution family in the context of
+goodness-of-fit tests. Here is the technical definition:
+
+The random variable $W$ is said to have a *chi-square distribution* with
+$k$ *degrees of fredom* if
+
+$$
+W = Z_{1}^2 + ... + Z_{k}^2
+$$
+
+for independent $Z_i$ having N(0,1) distributions.
 
 
 
