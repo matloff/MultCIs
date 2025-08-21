@@ -220,24 +220,6 @@ if one needs many. The coefficient for forming a CI -- 1.96 and 2.24
 above -- becomes too large. By contrast, the Scheffe' Method actually
 gives us the freedom to form infinitely many CIs.
 
-## The Chi-Square Family of Probability Distributions
-
-Some readers may have seen this distribution family in the context of
-goodness-of-fit tests. Here is the technical definition:
-
-The random variable $W$ is said to have a *chi-square distribution* with
-$k$ *degrees of fredom* if
-
-$$
-W = Z_{1}^2 + ... + Z_{k}^2
-$$
-
-for independent $Z_i$ having N(0,1) distributions.
-
-So, unlike the 2-parameter family of normal distributions, chi-square
-has just 1 parameter, the degrees of freedom. Note too that it is not
-symmetric.
-
 ## Covariance Matrices
 
 ### Definitions
@@ -290,7 +272,49 @@ $$
 X_i
 $$
 
-### Estimation via parametric model
+### Estimation via parametric model: the R **vcov** function
+
+
+
+
+
+### Multivariate Normal Distribution Family
+
+This is an extension of the ordinary normal family, with parameters
+mean vector and covariance matrix. Again, "there is no such animal" in
+practice, but fortunately there is a multivariate version of the Central
+Limit Theorem, which makes it all work.
+
+### The Chi-Square Family of Probability Distributions
+
+Some readers may have seen this distribution family in the context of
+goodness-of-fit tests. Here is the technical definition:
+
+The random variable $W$ is said to have a *chi-square distribution* with
+$k$ *degrees of fredom* if
+
+$$
+W = Z_{1}^2 + ... + Z_{k}^2
+$$
+
+for independent $Z_i$ having N(0,1) distributions.
+
+So, unlike the 2-parameter family of normal distributions, chi-square
+has just 1 parameter, the degrees of freedom. Note too that it is not
+symmetric.
+
+### Key theorem
+
+Say the random vector $X$ of length $p$ is multivariate normal, with
+mean vector $\nu$ and (invertible) covariance matrix $\Lambda$. Then the
+quantity
+
+$$
+(X-\nu)' \Lambda^{-1} (X-\nu)
+$$
+
+has a chi-square distribution with $p$ degrees of freedom.
+
 
 ## Scheffe' CIs
 
