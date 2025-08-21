@@ -88,12 +88,7 @@ Several points to note:
   # 0.24476    0.26124    0.25828    0.25194    0.24844
   ```
 
-[Some analysts in some applications may not consider
-MI to be a "problem." This is a philosophical issue, not pursued here,
-but we note that the choice may depend on the application. A medical
-research journal may require MI, say, whereas an amateur stock market
-investor may not feel it's necessary for that type of data
-analysis.]{.column-margin}
+
 We might wish to find a CI for each of the 5 quantities, or for each
 difference, i.e. c(5,2) = 10 CIs. With more algorithms, and especially
 with more hyperparameter combinations, our CI count could easily be
@@ -101,20 +96,26 @@ several dozen or more, raising MI concerns.
 
 # Review: Confidence Intervals, Standard Errors
 
-To set the stage, let's review the statistical concepts of
-*confidence interval* and *standard error*. Say we have
-an estimator $\widehat{\theta}$ of some population parameter $\theta$,
-e.g.\ $\bar{X}$ for a population mean $\mu$.
+[We follow the standard model in statistics in which one's data are
+considered from some population, actual or conceptual. In the ML
+community, the term *data-generating process* is
+analogous.]{.column-margin} To set the stage, let's review the
+statistical concepts of *confidence interval* and *standard error*. Say
+we have an estimator $\widehat{\theta}$ of some population parameter
+$\theta$, e.g.\ $\bar{X}$ for a population mean $\mu$.
 
 Loosely speaking, the term *standard error* of is our estimate of
 $\sqrt{\hat{Var}(\widehat{\theta})}$.  More precisely, suppose that
-$\widehat{\theta}$ is asymptotically normal.  The standard error is an
-estimate of the standard deviation of that normal distribution. For this
-reason, one sometimes writes $AVar(\widehat{\theta})$ rather than
-$Var(\widehat{\theta})$. 
+$\widehat{\theta}$ is asymptotically normal/Gaussian.  The standard
+error is an estimate of the standard deviation of that normal
+distribution. For this reason, one sometimes writes
+$AVar(\widehat{\theta})$ rather than $Var(\widehat{\theta})$. 
 
-In the familiar case in which $\theta$ is a population mean and
-$\widehat{\theta}$ is the sample mean, 
+[Standard statistics courses begin with "exact" CIs, using the
+t-distribution, which assumes $X$ has a normal dstr. But nothing in
+practice is normally distributed; no one is 80 feet tall, for
+instance]{.column-margin} In the familiar case in which $\theta$ is a
+population mean and $\widehat{\theta}$ is the sample mean, 
 
 $$
 AVar(\widehat{\theta}) = \frac{s}{\sqrt{n}}
@@ -154,27 +155,7 @@ Examples of finding $z_{\alpha}$:
 [1] 2.575829
 ```
 
-::: {.callout-important}
-## Note Regarding Sensitivity of Phrasing
 
-There is a bit of drama in this word *contain* in the phrase "will
-contain $\theta$." Instead of saying the intervals *contain* $\theta$,
-why not simply say $\theta$ is *in* the intervals? Aren't these two
-descriptions equivalent in terms of English?  Of course they are.
-
-But many instructors of statistics classes worry that students will take
-the description based on "in" to mean that $\theta$ is the random
-quantity, when in fact the CI is random (random center, random radius)
-and $\theta$ is fixed (though unknown). The instructors thus insist on
-the more awkward phrasing "contain," so as to avoid students
-misunderstanding. Indeed some instructors would contend that use of the
-word *in* is itself just plain incorrect.
-
-My own view is that in some cases the word *in* is clearer (and
-certainly correct in any case), and that it is better to add a warning
-about what is random/nonrandom than engage in awkward phrasing.
-
-:::
 
 ### Example: Logistic Regression Coefficients
 
@@ -253,5 +234,88 @@ $$
 
 for independent $Z_i$ having N(0,1) distributions.
 
+So, unlike the 2-parameter family of normal distributions, chi-square
+has just 1 parameter, the degrees of freedom. Note too that it is not
+symmetric.
 
+## Covariance Matrices
+
+### Definitions
+
+The term *covariance* is overloaded, with both scalar and matrix
+versions.
+
+* The covariance between random variables $U$ and $V$ is
+
+  $$
+  Cov(U,V) = E[(U - EU)(V - EV)]
+  $$
+
+* The *covariance matrix* of a random vector $X$ has as its row $i$,
+  column $j$ element the scalar covariance between elements $i$ and $j$
+  (denoted here by superscipts):
+
+  $$
+  Cov(X)_{ij} = Cov(X^{(i)},X^{(j)})
+  $$
+
+  One can show that
+
+  $$
+  Cov(X) = E[(X-EX) (X-EX)']
+  $${#eq-covdef}
+
+  where ' denotes matrix transpose and vectors column vectors by
+  default.  Here $EX$ is a vector whose element $i$ is $EX^{(i)}$.
+
+### Estimation via sample analog ("plug-in" estimates)
+
+Denote our data by $X_1,...,X_n$. @eq-covdef is the average value of
+$(X-EX) (X-EX)$ in the population, and its sample analog is the average
+value in the sample, i.e.
+
+$$
+\frac{1}{n}
+\sum_{i=1}^n
+(X_i - \bar{X})
+(X_i - \bar{X})'
+$$
+
+where
+
+$$
+\bar{X} = 
+\frac{1}{n}
+\sum_{i=1}^n
+X_i
+$$
+
+### Estimation via parametric model
+
+## Scheffe' CIs
+
+# Notes
+
+* Some analysts in some applications may not consider MI to be a
+  "problem." This is a philosophical issue, not pursued here, but we
+  note that the choice may depend on the application. A medical research
+  journal may require MI, say, whereas an amateur stock market investor
+  may not feel it's necessary for that type of data analysis.
+
+* There is a bit of drama in this word *contain* in the phrase "will
+  contain $\theta$." Instead of saying the intervals *contain* $\theta$,
+  why not simply say $\theta$ is *in* the intervals? Aren't these two
+  descriptions equivalent in terms of English?  Of course they are.
+
+  But many instructors of statistics classes worry that students will
+  take the description based on "in" to mean that $\theta$ is the random
+  quantity, when in fact the CI is random (random center, random radius)
+  and $\theta$ is fixed (though unknown). The instructors thus insist on
+  the more awkward phrasing "contain," so as to avoid students
+  misunderstanding. Indeed some instructors would contend that use of
+  the word *in* is itself just plain incorrect.
+
+  My own view is that in some cases the word *in* is clearer (and
+  certainly correct in any case), and that it is better to add a warning
+  about what is random/nonrandom than engage in awkward phrasing.
 
