@@ -30,7 +30,7 @@ Note that our focus is on CIs, not hypothesis tests. We strongly
 [recommend against](https://matloff.github.io/No-P-Values/NPV.htm)
 the latter approach.
 
-# Motivating Example
+## Motivating Example
 
 ``` r
 library(qeML)
@@ -94,42 +94,44 @@ difference, i.e. c(5,2) = 10 CIs. With more algorithms, and especially
 with more hyperparameter combinations, our CI count could easily be
 several dozen or more, raising MI concerns.
 
-# Review: Confidence Intervals, Standard Errors
+## Review: Confidence Intervals, Standard Errors
 
 [We follow the standard model in statistics in which one's data are
-considered from some population, actual or conceptual. In the ML
-community, the term *data-generating process* is
-analogous.]{.column-margin} To set the stage, let's review the
-statistical concepts of *confidence interval* and *standard error*. Say
-we have an estimator $\widehat{\theta}$ of some population parameter
-$\theta$, e.g.\ $\bar{X}$ for a population mean $\mu$.
+considered a sample from some population, actual or conceptual. In the
+ML community, the term *data-generating process* is analogous. Also note
+the "hat" notation, '^' meaning "estimate of."]{.column-margin} To set
+the stage, let's review the statistical concepts of *confidence
+interval* and *standard error*. Say we have an estimator
+$\widehat{\theta}$ of some population parameter $\theta$, e.g.\
+$\bar{X}$ for a population mean $\mu$.
 
-Loosely speaking, the term *standard error* of is our estimate of
-$\sqrt{\hat{Var}(\widehat{\theta})}$.  More precisely, suppose that
-$\widehat{\theta}$ is asymptotically normal/Gaussian.  The standard
-error is an estimate of the standard deviation of that normal
+Loosely speaking, the term *standard error* of $\widehat{\theta}$ is our
+estimate of $\sqrt{Var(\widehat{\theta})}$.  More precisely,
+suppose that $\widehat{\theta}$ is asymptotically normal/Gaussian.  The
+standard error is an estimate of the standard deviation of that normal
 distribution. For this reason, one sometimes writes
 $AVar(\widehat{\theta})$ rather than $Var(\widehat{\theta})$. 
+
+In the familiar case in which $\theta$ is a
+population mean and $\widehat{\theta}$ is the sample mean, 
+
+$$
+s.e.(\widehat{\theta}) = \frac{s}{{\sqrt{n}}}
+$${#eq-s2n}
+
+where $s^2$ is the sample variance.  and where we denote the standard
+error of $\widehat{\theta}$ by $\textrm{s.e.}(\widehat{\theta})$.
 
 [Standard statistics courses begin with "exact" CIs, using the
 t-distribution, which assumes $X$ has a normal dstr. But nothing in
 practice is normally distributed; no one is 80 feet tall, for
-instance]{.column-margin} In the familiar case in which $\theta$ is a
-population mean and $\widehat{\theta}$ is the sample mean, 
+instance]{.column-margin}An approximate 95% confidence interval (CI)
+for $\theta$ is then 
 
 $$
-AVar(\widehat{\theta}) = \frac{s}{\sqrt{n}}
+\widehat{\theta} \pm 1.96 ~
+\textrm{s.e.}(\widehat{\theta}) 
 $$
-
-where $s$ is the sample standard deviation.
-
-A, say 95%, confidence interval (CI) for $\theta$ is then
-$$
-\widehat{\theta} \pm 1.96 ~ \textrm{SE}(\widehat{\theta})
-$$
-
-where we denote the standard error of $\widehat{\theta}$ by
-$\textrm{SE}(\widehat{\theta})$.
 
 The 95% figure means that of all possible samples of the given size from
 the population, 95% of the resulting confidence intervals will contain
@@ -141,7 +143,7 @@ $z_{\alpha}$, the $1-\alpha/2$ quantile of the N(0,1) distribution, Then
 our CI is
 
 $$
-\widehat{\theta} \pm z_{\alpha} \textrm{SE}(\widehat{\theta})
+\widehat{\theta} \pm z_{\alpha} \textrm{s.e.}(\widehat{\theta})
 $${#eq-pmse}
 
 Examples of finding $z_{\alpha}$:
@@ -157,7 +159,7 @@ Examples of finding $z_{\alpha}$:
 
 
 
-### Example: Logistic Regression Coefficients
+### Example: Logistic regression coefficients
 
 ```{r}
 suppressPackageStartupMessages(library(qeML))
@@ -166,13 +168,16 @@ logitOut <- qeLogit(svcensus,'gender',yesYVal='female')
 summary(logitOut$glmOuts[[1]]) 
 ```
 
+[The **qeLogit** function is a wrapper for **glm**. In order to
+accommodate more than two classes, it performs multiple **glm** runs
+storing their outputs in an R list **glmOuts**.]{.column-margin}
 So a 95% CI for the coefficient for occupation 141 is
 
 $$
 -1.44 \pm 1.96 \times 0.07
 $${#eq-196}
 
-# The Bonferroni Inequality
+## The Bonferroni Inequality
 
 This one is the simplest and most convenient MI method. The derivation
 is instructive.
@@ -210,17 +215,22 @@ qnorm((1-0.975)/2)
 So, the 1.96 in @eq-pmse now becomes 2.24, forcing us to form wider
 intervals.
 
-If in @eq-probAorB one replaces $B$ by $B_1 or B_2$, that extends the
-relation from two events to three, and so on.
+If in @eq-probAorB one replaces $B$ by $B_1 \textrm{ or } B_2$, that
+extends the relation from two events to three, and so on.
 
-# Scheffe's Method
+For events $A_1,...,A_m$,
+
+$$
+P(A_1 \textrm{ or } ... \textrm{ or } A_m) \leq \sum_{i=1}^m P(A_i)
+$$
+
+
+## Scheffe's Method, Background Prep
 
 The Bonferroni Method is fine for forming a few CIs, but is impractical
 if one needs many. The coefficient for forming a CI -- 1.96 and 2.24
 above -- becomes too large. By contrast, the Scheffe' Method actually
 gives us the freedom to form infinitely many CIs.
-
-## Covariance Matrices
 
 ### Definitions
 
@@ -235,7 +245,7 @@ versions.
 
 * The *covariance matrix* of a random vector $X$ has as its row $i$,
   column $j$ element the scalar covariance between elements $i$ and $j$
-  (denoted here by superscipts):
+  (elements denoted here by superscipts):
 
   $$
   Cov(X)_{ij} = Cov(X^{(i)},X^{(j)})
@@ -247,16 +257,17 @@ versions.
   Cov(X) = E[(X-EX) (X-EX)']
   $${#eq-covdef}
 
-  where ' denotes matrix transpose and vectors column vectors by
+  where ' denotes matrix transpose and vectors are column vectors by
   default.  Here $EX$ is a vector whose element $i$ is $EX^{(i)}$.
 
-### Estimation via sample analog ("plug-in" estimates)
+### Estimation via sample analog ("plug-In" estimates)
 
 Denote our data by $X_1,...,X_n$. @eq-covdef is the average value of
-$(X-EX) (X-EX)$ in the population, and its sample analog is the average
+$(X-EX) (X-EX)'$ in the population, and its sample analog is the average
 value in the sample, i.e.
 
 $$
+\widehat{Cov}(X) =
 \frac{1}{n}
 \sum_{i=1}^n
 (X_i - \bar{X})
@@ -272,26 +283,53 @@ $$
 X_i
 $$
 
+Note too that in analogy with @eq-s2n, 
+
+$$
+\widehat{Cov}(\bar{X}) =
+\frac{1}{n} 
+\widehat{Cov}(X)
+$$
+
 ### Estimation via parametric model: the R **vcov** function
 
+[The **vcov** function is an R *generic* function, playing a similar
+role to **print**, **plot**, **summary** and so on. Many R statistical
+functions have this for their output, including say **glm**. When we
+make the call **vcov(glmOut)**, the R interpreter sees that **glmOut**
+is of class "glm" and thus transfers the call to the class-specific
+function, **vcov.glm(glmOut)**.  The function **coef**, also used here,
+is also generic.]{.column-margin} Parametric statistical models, e.g.
+linear and logistic regression, parametric analysis of contingency
+tables and so on, are smooth functions of sums, and thus asymptotically
+normally distributed. Their covariance matrices arise as part of the
+derivation, and are accessible for many R estimators via the **vcov**
+function, such as in our logit model above:
 
+```{r}
+vcov(logitOut$glmOuts[[1]])
+```
 
+Keep in mind that our $\theta$ here is $\beta$, the vector of regression
+coefficients. So, the covariance matrix printed out here is the
+estimated asymptotic covariance matrix of $\widehat{\beta}$. So for
+instance the estimated covariance between $\widehat{\beta}_{occ101}$ and
+$\widehat{\beta}_{0}$ is about -0.00125.
 
-
-### Multivariate Normal Distribution Family
+### Multivariate normal distribution family
 
 This is an extension of the ordinary normal family, with parameters
 mean vector and covariance matrix. Again, "there is no such animal" in
 practice, but fortunately there is a multivariate version of the Central
 Limit Theorem, which makes it all work.
 
-### The Chi-Square Family of Probability Distributions
+### The chi-square family of probability distributions
 
 Some readers may have seen this distribution family in the context of
 goodness-of-fit tests. Here is the technical definition:
 
 The random variable $W$ is said to have a *chi-square distribution* with
-$k$ *degrees of fredom* if
+$k$ *degrees of freedom* if
 
 $$
 W = Z_{1}^2 + ... + Z_{k}^2
@@ -315,10 +353,12 @@ $$
 
 has a chi-square distribution with $p$ degrees of freedom.
 
+If $\nu$ and $\Lambda$ are estimated from the sample as above, the
+distribution is approximate.
 
 ## Scheffe' CIs
 
-# Notes
+## Notes
 
 * Some analysts in some applications may not consider MI to be a
   "problem." This is a philosophical issue, not pursued here, but we
