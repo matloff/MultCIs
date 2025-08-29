@@ -18,7 +18,8 @@ However, if we form many CIs, say at 95% level each, their overall
 coverage probability will be much lower than 95%.  This is the *multiple
 inference* (MI) or *multiple comparisons* problem, sometimes also called
 *simultaneous inference*. In this document, we discuss remedies in the
-model-selection context. 
+model-selection context. (General application of MI methods will be
+presented as well.) 
 
 [For a good general presentation of MI methods, see Jason Hsu, *Multiple
 Comparisons: Theory and methods*.]{.column-margin} The MI problem has
@@ -28,7 +29,7 @@ Scheffe's Method.
 
 Note that our focus is on CIs, not hypothesis tests. We strongly
 [recommend against](https://matloff.github.io/No-P-Values/NPV.htm)
-the latter approach.
+using the latter in any statistical analysis.
 
 ## Motivating Example
 
@@ -38,7 +39,8 @@ data(svcensus)
 head(svcensus)
 ```
 
-This is US census data. Let's predict gender.
+This is US census data. Let's predict gender, using logistic regression,
+random forests, XGBoost, and k-NN with 2 values of k..
 
 ``` r
 logitAcc <- qeLogit(svcensus,'gender')$testAcc
@@ -157,7 +159,7 @@ Examples of finding $z_{\alpha}$:
 [1] 2.575829
 ```
 
-
+### Impact of the sampling scheme
 
 ### Example: Logistic regression coefficients
 
@@ -272,7 +274,7 @@ $$
 \sum_{i=1}^n
 (X_i - \bar{X})
 (X_i - \bar{X})'
-$$
+$${#eq-covformula}
 
 where
 
@@ -282,6 +284,9 @@ $$
 \sum_{i=1}^n
 X_i
 $$
+
+In R, say we have a data frame or matrix **A**, one data point per row.
+Then **cov(A)** computes @eq-covformula.
 
 Note too that in analogy with @eq-s2n, 
 
@@ -357,6 +362,63 @@ If $\nu$ and $\Lambda$ are estimated from the sample as above, the
 distribution is approximate.
 
 ## Scheffe' CIs
+
+> Say $\widehat{\theta}$ is an asymptotically $k$-dimensional normal
+> estimator of some population value $\theta$. Denote the covariance
+> matrix in that asymptotic distribution by $\Sigma$, assumed invertible,
+> with estimate $\widehat{\Sigma}$. Denote the sample size by $n$.  Then
+> for any constant, compatible vector $a$, form the interval
+> 
+> $$
+> a' \widehat{\theta} \pm \sqrt{d_{\alpha} a' \widehat{\Sigma} a}
+> = a' \widehat{\theta} \pm  \sqrt{d_{\alpha}} ~ s.e.(a' \widehat{\theta})
+> $${#eq-scheffe}
+> 
+> where $d_{\alpha}$ is the upper $\alpha$ quantile of the chi-square
+> distribution with $k$ degrees of freedom. 
+> 
+> Then the intervals in @eq-scheffe hold simultaneously at the approximate
+> $(1-\alpha)$ confidence level.
+
+[In the case $a = (0,0,0,0,1,-1,0,...,0)$, the sum of the elements 
+of $a$ is 0, known as a *contrast*. If one is willing to restrict one's
+analysis to contrasts, the degrees of freedom will decline by 1, making
+for slightly narrower CIs.]{.column-margin}
+The values of $a$ are chosen according to the analyst's interests. 
+For instance, in our logit model above, we could take $a = (0,0,0,0,1,0,...,0)$
+if we want a CI for $\beta_{occ101}$, or $a = (0,0,0,0,1,-1,0,...,0)$ if
+we want a CI for the difference $\beta_{occ101} - \beta_{occ102}$.
+
+## Example
+
+Let's continue the example at the top of this document.
+
+``` r
+logitAccs <- 
+   replicate(50,qeLogit(svcensus,'gender')$testAcc)
+rfAccs <- 
+   replicate(50,qeRFranger(svcensus,'gender')$testAcc)
+xgbAccs <- 
+   replicate(50,qeXGBoost(svcensus,'gender')$testAcc)
+knn25Accs <- replicate(50,qeKNN(svcensus,'gender',k=25)$testAcc)
+knn200Accs <- replicate(50,qeKNN(svcensus,'gender',k=200)$testAcc)
+accs <- cbind(logitAccs,rfAccs,xgbAccs,knn25Accs,knn200Accs)
+covaccs <- cov(accs) 
+xbar <- colMeans(accs) 
+covxbar <- covaccs / nrow(accs)
+d <- sqrt(qchisq(0.95,5))  # 5 degrees of freedom
+# form CI for difference between logit and RF
+a <- c(1,-1,0,0,0)
+t(a) %*% xbar  
+# -0.01258
+d * sqrt(t(a) %*% covxbar %*% a)
+t(a) %*% xbar - d * sqrt(t(a) %*% covxbar %*% a)
+t(a) %*% xbar + d * sqrt(t(a) %*% covxbar %*% a)
+# CI is (-0.02174126,-0.003418737)
+```
+
+Again, note that we can form as many CIs this way as we want, yet still
+retain an overall confidence level of at least 95%.
 
 ## Notes
 
