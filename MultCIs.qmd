@@ -31,7 +31,7 @@ Note that our focus is on CIs, not hypothesis tests. We strongly
 [recommend against](https://matloff.github.io/No-P-Values/NPV.htm)
 using the latter in any statistical analysis.
 
-## Motivating Example
+## Motivating Example {#sec-motex}
 
 ``` r
 library(qeML)
@@ -61,17 +61,6 @@ Several points to note:
 * The functions return S3 objects, one of whose components is prediction
   accuracy on the test data, **testAcc**, in this case the probability
   of misclassification..
-
-* Since the random number seed is not reset, each of the calls
-  is using different training sets and different test sets
-  from each other. This makes them statistically independent. The
-  alternative (not necessarily better or worse) would be to insert, say
-
-  ``` r
-  set.seed(9999)
-  ```
-
-  before each of the calls.
 
 * Since the holdout set is random, we should be performing each of the
   calls many times, and compute averages, say
@@ -158,8 +147,6 @@ Examples of finding $z_{\alpha}$:
 > qnorm(0.995)  # for 99% CI
 [1] 2.575829
 ```
-
-### Impact of the sampling scheme
 
 ### Example: Logistic regression coefficients
 
@@ -391,7 +378,7 @@ we want a CI for the difference $\beta_{occ101} - \beta_{occ102}$.
 
 ## Example
 
-Let's continue the example at the top of this document.
+Let's continue the example in @sec-motex.
 
 ``` r
 logitAccs <- 
@@ -420,6 +407,41 @@ t(a) %*% xbar + d * sqrt(t(a) %*% covxbar %*% a)
 Again, note that we can form as many CIs this way as we want, yet still
 retain an overall confidence level of at least 95%.
 
+## Impact of the Sampling Scheme
+
+Again consider the code in @sec-motex.  Since the random number seed is
+not reset, each of the calls is using different training sets and
+different test sets from each other. This makes them statistically
+independent. The alternative would be to insert, say
+
+``` r
+set.seed(9999)
+```
+
+before each of the calls:
+
+``` r
+set.seed(9999)
+logitAccs <-
+   replicate(50,qeLogit(svcensus,'gender')$testAcc)
+set.seed(9999)
+rfAccs <-
+   replicate(50,qeRFranger(svcensus,'gender')$testAcc)
+set.seed(9999)
+xgbAccs <-
+   replicate(50,qeXGBoost(svcensus,'gender')$testAcc)
+set.seed(9999)
+knn25Accs <- replicate(50,qeKNN(svcensus,'gender',k=25)$testAcc)
+set.seed(9999)
+knn200Accs <- replicate(50,qeKNN(svcensus,'gender',k=200)$testAcc)
+accs1 <- cbind(logitAccs,rfAccs,xgbAccs,knn25Accs,knn200Accs)
+```
+
+Now, what are the pros and cons here?
+
+* In the second scenario, the fact that each call operates on the same
+  dataset
+
 ## Notes
 
 * Some analysts in some applications may not consider MI to be a
@@ -428,18 +450,19 @@ retain an overall confidence level of at least 95%.
   journal may require MI, say, whereas an amateur stock market investor
   may not feel it's necessary for that type of data analysis.
 
-* There is a bit of drama in this word *contain* in the phrase "will
-  contain $\theta$." Instead of saying the intervals *contain* $\theta$,
-  why not simply say $\theta$ is *in* the intervals? Aren't these two
-  descriptions equivalent in terms of English?  Of course they are.
+* There is a bit of drama in this word *contain* in the statement "95%
+  of the resulting confidence intervals will contain $\theta$." Instead
+  of saying the intervals *contain* $\theta$, why not simply say
+  $\theta$ is *in* the intervals? Aren't these two descriptions
+  equivalent in terms of English?  
 
-  But many instructors of statistics classes worry that students will
-  take the description based on "in" to mean that $\theta$ is the random
-  quantity, when in fact the CI is random (random center, random radius)
-  and $\theta$ is fixed (though unknown). The instructors thus insist on
-  the more awkward phrasing "contain," so as to avoid students
-  misunderstanding. Indeed some instructors would contend that use of
-  the word *in* is itself just plain incorrect.
+  Of course they are.  But many instructors of statistics classes worry
+  that students will take the description based on "in" to mean that
+  $\theta$ is the random quantity, when in fact the CI is random (random
+  center, random radius) and $\theta$ is fixed (though unknown). The
+  instructors thus insist on the more awkward phrasing "contain," so as
+  to avoid students misunderstanding. Indeed some instructors would
+  contend that use of the word *in* is itself just plain incorrect.
 
   My own view is that in some cases the word *in* is clearer (and
   certainly correct in any case), and that it is better to add a warning
